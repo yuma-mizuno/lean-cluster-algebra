@@ -1,13 +1,13 @@
 import linear_algebra.dual
-import algebra.module
 import algebra.monoid_algebra
 import ring_theory.localization
-
-
+import tactic.basic
+import tactic.equiv_rw
 
 universes u
 
 noncomputable theory
+open_locale classical
 
 namespace cluster
 
@@ -32,7 +32,7 @@ end skew_symmetric_form
 
 section seed_mutation
 
-variables {N : Type u} [decidable_eq N] [add_comm_group N] [no_zero_smul_divisors ℤ N]
+variables {N : Type u} [add_comm_group N] [no_zero_smul_divisors ℤ N]
 [skew_symmetric_form N] (s : multiset N) (v : N) (ε : ℤ)
 
 open skew_symmetric_form
@@ -107,8 +107,9 @@ end seed_mutation
 
 section mutation
 
-variables {N : Type u} [decidable_eq N] [add_comm_group N] [no_zero_smul_divisors ℤ N]
+variables {N : Type u} [add_comm_group N] [no_zero_smul_divisors ℤ N]
 [skew_symmetric_form N] (s : multiset N) (v : N) (ε : ℤ)
+
 
 open skew_symmetric_form
 
@@ -128,6 +129,7 @@ begin
   simp,
 end
 -/
+
 
 def localization_at_vector : Type u :=
 localization.away (function_of_vector v)
@@ -269,13 +271,13 @@ begin
     rw [one_mul, mul_one, is_localization.mk'_self] },
 end
 
+
+
 def localization_at_vector.cast_ring_equiv (v w : N) (h_eq : v = w) : localization_at_vector v ≃+* localization_at_vector w :=
-{ to_fun := cast (congr rfl h_eq),
-  inv_fun := cast (eq.symm (congr rfl h_eq)),
-  left_inv := begin intros x, rw [cast_cast, cast_eq] end,
-  right_inv := begin intros x, rw [cast_cast, cast_eq] end,
-  map_mul' := begin intros _ _, induction h_eq, refl end,
-  map_add' := begin intros _ _, induction h_eq, refl end }
+begin
+  induction h_eq, refl,
+end
+
 
 @[simp] lemma mutation_alg_const' : ((mutation_between_localization v ε).comp (algebra_map (ring_of_function N) (localization_at_vector (ε • v)))).comp add_monoid_algebra.single_zero_ring_hom =
 (algebra_map (ring_of_function N) (localization_at_vector (ε • v))).comp add_monoid_algebra.single_zero_ring_hom := dec_trivial
@@ -293,11 +295,9 @@ end
 @[simp] lemma mutation_alg_monomial (a : multiplicative(module.dual ℤ N)) : (mutation_between_localization v ε) ((algebra_map (ring_of_function N) (localization_at_vector (ε • v))) (finsupp.single a 1)) =
 (algebra_map (ring_of_function N) (localization_at_vector (ε • v))) (finsupp.single a 1) * ((function_of_vector.unit (ε • v))^(- a v)).val :=
 begin
-  unfold mutation_between_localization,
-  unfold is_localization.away.lift,
+  unfold mutation_between_localization is_localization.away.lift,
   rw is_localization.lift_eq,
-  unfold mutation_to_localization,
-  unfold add_monoid_algebra.lift_nc_ring_hom,
+  unfold mutation_to_localization add_monoid_algebra.lift_nc_ring_hom,
   dsimp,
   rw add_monoid_algebra.lift_nc_single,
   unfold mutation_monomial,
@@ -336,11 +336,11 @@ end
 ring_equiv.to_ring_hom (localization_at_vector.cast_ring_equiv v w h_eq) (function_of_vector.unit v ^ k).val =
 (function_of_vector.unit w ^ k).val :=
 begin
-  induction h_eq,
+  subst h_eq,
   refl,
 end
 
-def mutation_isom_localization (H : v ∈ s) : localization_at_vector (ε • v) ≃+* localization_at_vector (ε • v) :=
+def mutation_isom_localization : localization_at_vector (ε • v) ≃+* localization_at_vector (ε • v) :=
 ring_equiv.of_hom_inv (mutation_between_localization v ε) 
   (((localization_at_vector.cast_ring_equiv (-ε • -v) (ε • v) $ by simp).to_ring_hom.comp 
   (mutation_between_localization (-v) (-ε)) ).comp 
@@ -394,10 +394,90 @@ begin
     apply mul_one },
 end
 
+@[simp] lemma mutation_isom_localization.coe_ring_hom : 
+(mutation_isom_localization v ε).to_ring_hom = mutation_between_localization v ε :=
+by refl
+
+
+set_option pp.implicit false
+
+
+variables (R : Type*) [integral_domain R] (h : R ≃+* ring_of_function N)
+
+#check algebra (localization_at_vector v)
+
+instance  ambient_ring.algebra (h : R ≃+* ring_of_function N) : algebra R (localization_at_vector v) :=
+begin
+  refine ring_hom.to_algebra _,
+  refine ring_hom.comp _ h.to_ring_hom,
+  refine algebra.to_ring_hom,
+end
+
+instance ambient_ring.is_localization (h : R ≃+* ring_of_function N) : 
+@is_localization _ _ ((submonoid.powers (function_of_vector (ε • v))).comap h.to_monoid_hom)
+  (localization_at_vector v) _ (ambient_ring.algebra v R h) :=
+sorry
+
+
+#check (localization_at_vector.is_localization v).map_units 
+/-
+
+lemma a (h : R ≃+* ring_of_function N)  :  ((non_zero_divisors R).map 
+  (algebra_map R (localization_at_vector (ε • v))).to_monoid_hom).map 
+  (mutation_isom_localization v ε).to_monoid_hom 
+= ((non_zero_divisors (ring_of_function N)).map 
+  (algebra_map (ring_of_function N) (localization_at_vector (ε • v))).to_monoid_hom) := 
+begin
+  sorry
+end
+-/
+
+lemma a (h : is_integral_domain (ring_of_function N))  :  ((non_zero_divisors (ring_of_function N)).map 
+  (algebra_map (ring_of_function N) (localization_at_vector (ε • v))).to_monoid_hom).map 
+  (mutation_isom_localization v ε).to_monoid_hom 
+= ((non_zero_divisors (ring_of_function N)).map 
+  (algebra_map (ring_of_function N) (localization_at_vector (ε • v))).to_monoid_hom) := 
+begin
+  have : integral_domain (ring_of_function N),
+    apply is_integral_domain.to_integral_domain (ring_of_function N) h,
+  resetI,
+  ext,
+  split,
+  intros hx,
+  rcases hx with ⟨a, ⟨ha1, ha2⟩⟩,
+  rcases ha1 with ⟨a0, ⟨g1, g2⟩⟩,
+  use a0,
+  split,
+  assumption,
+  sorry,
+  sorry,
+end
+
+
+
+#check (mutation_isom_localization v ε)
+#check (non_zero_divisors (ring_of_function N)).map (algebra_map (ring_of_function N) (localization_at_vector (ε • v))).to_monoid_hom
+#check algebra_map (ring_of_function N) (localization_at_vector v)
+
+instance ring_of_function.integral_domain (H : is_integral_domain (ring_of_function N)) : integral_domain (ring_of_function N) :=
+is_integral_domain.to_integral_domain (ring_of_function N) h
+
+def mutation_isom_field {H : is_integral_domain (ring_of_function N)} : 
+@fraction_ring (ring_of_function N) (ring_of_function.integral_domain H) ≃+* 
+@fraction_ring (ring_of_function N) (ring_of_function.integral_domain H) :=
+begin
+
+end
+
 
 /-
-def mutation_isom_field : (fraction_ring (ring_of_function N)) ≃+* (fraction_ring (ring_of_function N)) :=
+\
+is_localization.field_equiv_of_ring_equiv 
 
+
+
+Cluster algebra 
+subring of the ambient field fraction_ring R.
 -/
 
 end mutation
