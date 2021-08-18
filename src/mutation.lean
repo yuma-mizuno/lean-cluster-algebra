@@ -1,15 +1,12 @@
 import linear_algebra.dual
 import algebra.monoid_algebra
 import ring_theory.localization
---import ring_theory.nilpotent
 import linear_algebra.bilinear_form
-import algebra.field_power
 import tactic.basic
 import localization
 
 universes u
 
-noncomputable theory
 open_locale classical
 
 namespace skew_sym_bilin_form
@@ -226,7 +223,7 @@ def seed_mutation.symm {s s' : multiset N} (μ : seed_mutation s s') : seed_muta
     simp only [function.comp_app, multiset.map_congr, multiset.map_map],
     rw [pl_mutation_eq μ.src_vect μ.sign 1, pl_mutation_eq μ.tar_vect (-μ.sign) (-1),
       μ.tar_vect_eq_neg_src_vect],
-    simp only [id.def, multiset.map_id', eq_self_iff_true, multiset.map_congr, cluster.pl_mutation_neg_left_id],
+    simp only [id.def, multiset.map_id', eq_self_iff_true, multiset.map_congr, pl_mutation_neg_left_id],
     congr,
     apply eq.symm,
     apply multiset.map_id',
@@ -246,12 +243,12 @@ add_monoid_algebra ℤ (module.dual ℤ N)
 
 local attribute [reducible, inline] add_monoid_algebra ring_of_function
 
-instance : comm_ring (ring_of_function N) := add_monoid_algebra.comm_ring
-instance : comm_ring (module.dual ℤ N →₀ ℤ) := add_monoid_algebra.comm_ring
+noncomputable instance : comm_ring (ring_of_function N) := add_monoid_algebra.comm_ring
+noncomputable instance : comm_ring (module.dual ℤ N →₀ ℤ) := add_monoid_algebra.comm_ring
 
 open skew_symmetric_form
 
-def function_of_vector (v : N) : (ring_of_function N) :=
+noncomputable theory def function_of_vector (v : N) : (ring_of_function N) :=
 finsupp.single 0 1 + finsupp.single (B v) 1
 
 lemma function_of_vector_ne_zero  (v : N) : function_of_vector v ≠ 0 :=
@@ -496,7 +493,7 @@ begin
     apply congr_arg (λ x : S, x ^ k.succ),
     rw is_localization.lift_mk'_spec,
     simp only [set_like.coe_mk, cluster.mutation_of_function_of_mutation_direction, ring_hom.map_one],
-    erw <- is_localization.mk'_mul,
+    rw <- is_localization.mk'_mul,
     rw [one_mul, mul_one, is_localization.mk'_self] },
 end
 

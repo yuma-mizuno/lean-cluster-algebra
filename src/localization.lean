@@ -1,7 +1,5 @@
 import ring_theory.localization
 
-noncomputable theory
-
 namespace is_localization
 
 section
@@ -15,7 +13,7 @@ variables
 
 include M N
 
-def lift_of_sup : B →+* C :=
+noncomputable def lift_of_sup : B →+* C :=
 @lift A _ M B _ _ C _ _ (algebra_map A C)
 begin
   rintros ⟨m, hm⟩,
@@ -23,7 +21,7 @@ begin
   exact map_units C (⟨m, set_like.le_def.mp le_sup_left hm⟩ : M ⊔ N),
 end
 
-def algebra_of_lift_of_sup : algebra B C := ring_hom.to_algebra (lift_of_sup M N B C)
+noncomputable def algebra_of_lift_of_sup : algebra B C := ring_hom.to_algebra (lift_of_sup M N B C)
 
 local attribute[instance] algebra_of_lift_of_sup
 
@@ -180,10 +178,10 @@ variables
 
 include h
 
-def lift_of_le : B →+* C :=
+noncomputable def lift_of_le : B →+* C :=
 @lift_of_sup A _ M N B _ C _ _ _ _ (by rw sup_eq_right.mpr h; by apply_instance)
 
-def algebra_of_lift_of_le : algebra B C := 
+noncomputable def algebra_of_lift_of_le : algebra B C := 
 ring_hom.to_algebra (lift_of_le B C h)
 
 lemma eq_comp_app_of_lift_of_le (a : A) : 
@@ -247,10 +245,10 @@ variables {A : Type*} [integral_domain A]
 --local attribute[instance] algebra_of_lift_of_le
 include f h_ne
 
-def lift_of_away_frac : B →+* C :=
+noncomputable def lift_of_away_frac : B →+* C :=
 lift_of_le B C (powers_le_non_zero_divisors_of_domain h_ne)
 
-def algebra_of_away_frac : algebra B C :=
+noncomputable def algebra_of_away_frac : algebra B C :=
 ring_hom.to_algebra (lift_of_away_frac B C h_ne)
 
 --local attribute [instance] algebra_of_away_frac

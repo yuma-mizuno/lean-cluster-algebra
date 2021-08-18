@@ -76,14 +76,28 @@ begin
   dsimp at *,
   split,
   refine f.property,
+  have g := β.app (CommRing.of (localization M)) _,
+  tactic.swap,
+  fsplit,
+  dsimp,
+  exact (algebra_map A (localization M)),
+  intros a,
+  dsimp,
+  exact is_localization.map_units (localization M) a,
   intros b,
+  simp only [category_theory.coyoneda_obj_obj, opposite.unop_op] at g,
 
+  let p := g b,
+  simp only [CommRing.coe_of] at p,
+  cases is_localization.surj M p with q h,
+  use q,
   sorry,
   intros a a',
+  sorry,
 end
 
 
-
+#check is_localization.map_units
 
 
 noncomputable instance :
