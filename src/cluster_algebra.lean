@@ -35,7 +35,7 @@ called the Laurent phenomenon of cluster algebras.
 
 noncomputable theory
 
-open cluster category_theory opposite
+open category_theory opposite
 
 local attribute [class] is_integral_domain
 

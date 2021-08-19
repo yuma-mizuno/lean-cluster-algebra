@@ -71,8 +71,6 @@ end skew_sym_bilin_form
 
 end skew_sym_bilin_form
 
-namespace cluster
-
 class inductive is_sign (ε : ℤ) : Prop
 | pos : ε = 1 → is_sign
 | neg : ε = -1 → is_sign
@@ -423,7 +421,7 @@ begin
     apply congr_arg (λ x : S, x ^ k.succ),
     simp only [units.coe_mk, units.inv_mk],
     rw is_localization.lift_mk'_spec,
-    simp only [set_like.coe_mk, cluster.to_away_of_function_of_mutation_direction, ring_hom.map_one],
+    simp only [set_like.coe_mk, to_away_of_function_of_mutation_direction, ring_hom.map_one],
     rw <- is_localization.mk'_mul,
     rw [one_mul, mul_one, is_localization.mk'_self] },
 end
@@ -551,5 +549,3 @@ begin
 end
 
 end mutation_frac
-
-end cluster

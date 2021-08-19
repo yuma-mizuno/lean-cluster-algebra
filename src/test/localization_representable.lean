@@ -94,10 +94,6 @@ begin
   sorry,
 end
 
-
-#check is_localization.map_units
-
-
 noncomputable instance :
 algebra A (is_unit_of_ring_hom_functor M).corepr_X :=
 ring_hom.to_algebra (is_unit_of_ring_hom_functor M).corepr_x.val
@@ -106,7 +102,7 @@ ring_hom.to_algebra (is_unit_of_ring_hom_functor M).corepr_x.val
 instance  :
 is_localization M (is_unit_of_ring_hom_functor M).corepr_X :=
 begin
-  apply_instance,
+  sorry,
 end
 
 lemma is_localization.trans {A B C : Type*} [comm_ring A] [comm_ring B] [comm_ring C] (M : submonoid A)
@@ -115,7 +111,7 @@ lemma is_localization.trans {A B C : Type*} [comm_ring A] [comm_ring B] [comm_ri
 @is_localization _ _ M C _ 
 (ring_hom.to_algebra (f.to_ring_hom.comp (algebra_map A B))) :=
 begin
-
+  sorry,
 end
 
 
