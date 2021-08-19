@@ -4,8 +4,35 @@ import ring_theory.localization
 import linear_algebra.bilinear_form
 import tactic.basic
 import localization
+/-!
+# Mutations
 
-universes u
+This file defines mutations as isomorphisms between ambient fields.
+
+A seed mutation is a combinatorial operation on a ℤ-module `N` given by a piecewise-linear
+transformation on `N`. A mutation is a field isomorphism associated with a seed mutation.
+It is an isomorphism on the `K` that is a field of fractions of the group algebra 
+of the dual module of `N`. We define mutations by the following three steps.
+
+Step 1. We define a map `seed_mutation.monomial_to_away` that is a monoid hom 
+from `module.dual ℤ N` to `S`, where `S` is a localization of the group algebra of 
+`module.dual ℤ N` away from a non-zero element in the group algebra of `module.dual ℤ N`.
+Step 2. We show that the map defined in Step 1 induces a isomorphism on `S`.
+Step 3. We show that the map defined in Step 2 induces a isomorphism on `K` by using the following
+general fact on localizations: a composition of localizations are equivalent to a single localization 
+when submonoids under these localizations satisfies appropriate inclusion conditions. 
+
+## Main definitions
+
+* `seed_mutation (s s' : multiset N)` is a structure expressing that `μ : seed_mutatoin s s'`
+  is a seed mutation with a source seed `s` and a target seed `s'`.
+* `seed_mutation.field_equiv μ K` is a field isomorphism `K ≃+* K` associated with 
+  a seed mutation `μ`.
+
+## Main statements
+
+* `mutation_field_equiv_map_monomial` gives a fomula for a mutation on the monomials.
+-/
 
 open_locale classical
 
@@ -25,26 +52,20 @@ include H
 
 lemma skew_sym (x y : M) : B x y = - B y x := H x y
 
-lemma is_refl : refl_bilin_form.is_refl B := 
-λ x y H1, by rw H y x; exact neg_eq_zero.mpr H1
+lemma is_refl : refl_bilin_form.is_refl B := λ x y H1, (H y x).symm ▸ neg_eq_zero.mpr H1
 
-lemma ortho_sym {x y : M} :
-  is_ortho B x y ↔ is_ortho B y x := refl_bilin_form.ortho_sym (is_refl H)
+lemma ortho_sym {x y : M} : is_ortho B x y ↔ is_ortho B y x := 
+refl_bilin_form.ortho_sym (is_refl H)
 
 lemma is_alt [no_zero_divisors R] [char_zero R] : alt_bilin_form.is_alt B := 
-begin
-  intros n,
-  let h :=  H n n,
-  rw eq_neg_iff_add_eq_zero at h,
-  simp only [add_self_eq_zero] at h,
-  exact h,
-end
+λ n, add_self_eq_zero.mp (eq_neg_iff_add_eq_zero.mp (H n n))
 
 @[simp]
-lemma self_eq_zero  [no_zero_divisors R] [char_zero R] (x : M) : B x x = 0 :=  is_alt H x
+lemma self_eq_zero  [no_zero_divisors R] [char_zero R] (x : M) : B x x = 0 := is_alt H x
 
 @[simp]
-lemma self_eq_zero_to_lin [no_zero_divisors R] [char_zero R] (x : M)  : to_lin' B x x = 0 := self_eq_zero H x
+lemma self_eq_zero_to_lin [no_zero_divisors R] [char_zero R] (x : M) : to_lin' B x x = 0 := 
+self_eq_zero H x
 
 end skew_sym_bilin_form
 
@@ -64,11 +85,7 @@ instance neg.is_sign (ε : ℤ) [is_sign ε] : is_sign (-ε) :=
 begin
   let h : is_sign ε := by apply_instance,
   refine is_sign.rec_on h (λ H, _) (λ H, _),
-  rw H,
-  apply_instance,
-  rw H,
-  rw neg_neg,
-  apply_instance,
+  repeat {any_goals { rw H <|> apply_instance <|> rw neg_neg }},
 end
 
 open skew_sym_bilin_form
@@ -104,16 +121,13 @@ def pl_mutation.equiv : N ≃ N :=
       linear_map.neg_apply, smul_neg, neg_neg, linear_map.map_smul, linear_map.add_apply, linear_map.map_add,
       self_eq_zero skew, add_zero, neg_add_cancel_right, eq_self_iff_true, mul_zero, neg_zero] }
 
-lemma pl_mutation.bijective :
-function.bijective (pl_mutation v ε) :=
+lemma pl_mutation.bijective : function.bijective (pl_mutation v ε) :=
 (pl_mutation.equiv v ε).bijective
 
-@[simp] lemma pl_mutation_neg_left_id :
-pl_mutation (-v) (-ε) ∘ pl_mutation v ε = id :=
+@[simp] lemma pl_mutation_neg_left_id : pl_mutation (-v) (-ε) ∘ pl_mutation v ε = id :=
 by ext x; apply (pl_mutation.equiv v ε).left_inv x
 
-@[simp] lemma pl_mutation_neg_righ_id :
-pl_mutation v ε ∘ pl_mutation (-v) (-ε) = id :=
+@[simp] lemma pl_mutation_neg_righ_id : pl_mutation v ε ∘ pl_mutation (-v) (-ε) = id :=
 by ext x; apply (pl_mutation.equiv v ε).right_inv x
 
 structure seed_mutation (s s' : multiset N) :=
@@ -138,10 +152,10 @@ lemma seed_mutation.is_direction [is_mutation_direction μ v] :
 ∃ k : ℤ, v = k • μ.src_vect := is_mutation_direction.is_direction
 
 instance src_vect_is_mutation_direction :
-is_mutation_direction μ μ.src_vect := by use 1; simp
+is_mutation_direction μ μ.src_vect := by {use 1, simp}
 
 instance tar_vect_is_mutation_direction :
-is_mutation_direction μ μ.tar_vect := by use -1; simp; exact μ.vect_tar_src
+is_mutation_direction μ μ.tar_vect := by {use -1, simp, exact μ.vect_tar_src}
 
 lemma seed_mutation.tar_vect_eq_neg_src_vect {s s' : multiset N} (μ : seed_mutation s s') : 
 μ.tar_vect = - μ.src_vect := μ.vect_tar_src
@@ -151,24 +165,16 @@ lemma seed_mutation.src_vect_eq_neg_tar_vect {s s' : multiset N} (μ : seed_muta
 by calc μ.src_vect = - - μ.src_vect : by rw neg_neg
         ...         =   - μ.tar_vect : by rw μ.vect_tar_src
 
-instance sign_tar_vect_is_mutation_direction :
-is_mutation_direction μ (μ.sign • μ.tar_vect) :=
+instance sign_tar_vect_is_mutation_direction : is_mutation_direction μ (μ.sign • μ.tar_vect) :=
 begin
-  cases μ.is_sign with pos neg,
-  rw pos,
-  swap,
-  rw [neg, μ.tar_vect_eq_neg_src_vect],
-  all_goals {simp, apply_instance},
+  cases μ.is_sign with h h, 
+  repeat { any_goals {rw h <|> simp <|> apply_instance <|> rw μ.tar_vect_eq_neg_src_vect }},
 end
 
-instance sign_src_vect_is_mutation_direction :
-is_mutation_direction μ (μ.sign • μ.src_vect) :=
+instance sign_src_vect_is_mutation_direction : is_mutation_direction μ (μ.sign • μ.src_vect) :=
 begin
-  cases μ.is_sign with pos neg,
-  rw pos,
-  swap,
-  rw [neg, μ.src_vect_eq_neg_tar_vect],
-  all_goals {simp, apply_instance},
+  cases μ.is_sign with h h, 
+  repeat { any_goals {rw h <|> simp <|> apply_instance <|> rw μ.src_vect_eq_neg_tar_vect }},
 end
 
 end direction
@@ -180,8 +186,7 @@ open skew_symmetric_form
 namespace seed_mutation
 
 @[simp] lemma form_mutation_direction_eq_zero {s s' : multiset N} (μ : seed_mutation s s')
-(v w : N) [is_mutation_direction μ v] [is_mutation_direction μ w] : 
-form v w = 0 :=
+(v w : N) [is_mutation_direction μ v] [is_mutation_direction μ w] : form v w = 0 :=
 begin
   cases μ.is_direction v with k hk,
   cases μ.is_direction w with l hl,
@@ -190,8 +195,7 @@ begin
 end
 
 @[simp] lemma form_mutation_direction_eq_zero' {s s' : multiset N} (μ : seed_mutation s s')
-(v w : N) [is_mutation_direction μ v] [is_mutation_direction μ w] : 
-B v w = 0 := 
+(v w : N) [is_mutation_direction μ v] [is_mutation_direction μ w] : B v w = 0 := 
 begin
   simp only [bilin_form.to_lin_apply],
   exact form_mutation_direction_eq_zero μ v w,
@@ -200,9 +204,11 @@ end
 end seed_mutation
 
 lemma pl_mutation_eq (v : N) {w : N} (ε : ℤ) (c : ℤ) (h : w = c • v) : pl_mutation v ε w = w :=
-by unfold pl_mutation; by rw h; by simp only 
-  [ add_right_eq_self, algebra.id.smul_eq_mul, bilin_form.to_lin_apply, linear_map.smul_apply, 
-    linear_map.map_smul, self_eq_zero skew, max_eq_right, eq_self_iff_true, zero_smul, mul_zero]
+begin
+  unfold pl_mutation, rw h, 
+  simp only [add_right_eq_self, algebra.id.smul_eq_mul, bilin_form.to_lin_apply, linear_map.smul_apply, 
+    linear_map.map_smul, self_eq_zero skew, max_eq_right, eq_self_iff_true, zero_smul, mul_zero],
+end
 
 @[simp] lemma pl_mutation_eq' (v : N) (ε : ℤ) : pl_mutation v ε v = v :=
 pl_mutation_eq v ε 1 (one_gsmul _).symm
@@ -227,7 +233,7 @@ def seed_mutation.symm {s s' : multiset N} (μ : seed_mutation s s') : seed_muta
     congr,
     apply eq.symm,
     apply multiset.map_id',
-    any_goals {simp},
+    any_goals {simp only [one_gsmul, neg_smul]},
     apply μ.src_vect_eq_neg_tar_vect,
     exact function.bijective.injective (pl_mutation.bijective μ.tar_vect (-μ.sign)),
     exact function.bijective.injective (pl_mutation.bijective μ.src_vect μ.sign),
@@ -272,85 +278,6 @@ begin
   simp,
 end
 
-lemma function_of_vector_is_palindromic  (v : N) :
-(finsupp.single (B v) 1 : (ring_of_function N)) * (function_of_vector (-v)) = function_of_vector v :=
-begin
-  unfold function_of_vector,
-  erw mul_add,
-  repeat {rw add_monoid_algebra.single_mul_single},
-  simp only [add_zero, mul_one, linear_map.map_neg, add_right_neg],
-  apply add_comm,
-end
-
-def function_of_vector_is_palindromic' (v : N) : 
-(finsupp.single (B (- v)) 1 : ring_of_function N) * (function_of_vector v) = function_of_vector (-v) :=
-begin
-  let h := function_of_vector_is_palindromic (-v),
-  rw neg_neg at h,
-  assumption',
-end
-
-def pow_neg_vect_in_pow_vect {v : N} {f : ring_of_function N} (h : f ∈ submonoid.powers (function_of_vector (-v))) : 
-∃ k : ℕ, ((finsupp.single (B (k • v)) 1) : ring_of_function N) * f ∈ submonoid.powers (function_of_vector v) :=
-begin
-  cases h with k h,
-  use k,
-  rw <- h,
-  unfold function_of_vector,
-  simp only [linear_map.map_neg, linear_map.map_smul_of_tower, linear_map.to_fun_eq_coe],
-  rw [<- one_pow k, <- add_monoid_algebra.single_pow, one_pow k, <- mul_pow, mul_add],
-  repeat {rw add_monoid_algebra.single_mul_single},
-  simp only [add_zero, mul_one, add_right_neg],
-  rw add_comm,
-  exact ⟨k, rfl⟩,
-end
-
-def pow_vect_in_pow_neg_vect {v : N} {f : ring_of_function N} (h : f ∈ submonoid.powers (function_of_vector v)) : 
-∃ k : ℕ, ((finsupp.single (B (k • (-v))) 1) : ring_of_function N) * f ∈ submonoid.powers (function_of_vector (-v)) :=
-begin
-  cases h with k h,
-  use k,
-  rw <- h,
-  unfold function_of_vector,
-  simp only [linear_map.map_neg, linear_map.map_smul_of_tower, linear_map.to_fun_eq_coe],
-  rw [<- one_pow k, <- add_monoid_algebra.single_pow, one_pow k, <- mul_pow, mul_add],
-  repeat {rw add_monoid_algebra.single_mul_single},
-  simp only [add_zero, mul_one, add_left_neg],
-  rw add_comm,
-  exact ⟨k, rfl⟩,
-end
-
-variables (v w : N) (S : Type*) [integral_domain S]
-variables [algebra (ring_of_function N) S] 
-[is_localization.away (function_of_vector v) S]
-[is_localization.away (function_of_vector w) S]
-
-abbreviation is_localization_at_vect : Prop := is_localization.away (function_of_vector v) S
-
-def monomial.unit (m : module.dual ℤ N) : units S :=
-{ val := algebra_map (ring_of_function N) S (finsupp.single m 1),
-  inv := algebra_map (ring_of_function N) S (finsupp.single (-m) 1),
-  val_inv := 
-  begin
-    rw <- ring_hom.map_mul,
-    have : finsupp.single m 1 * finsupp.single (-m) 1 = (1 : ring_of_function N),
-    rw add_monoid_algebra.single_mul_single,
-    simp,
-    exact add_monoid_algebra.one_def,
-    rw this,
-    apply ring_hom.map_one,
-  end,
-  inv_val :=
-  begin
-    rw <- ring_hom.map_mul,
-    have : finsupp.single (-m) 1 * finsupp.single m 1 = (1 : ring_of_function N),
-    rw add_monoid_algebra.single_mul_single,
-    simp,
-    exact add_monoid_algebra.one_def,
-    rw this,
-    apply ring_hom.map_one,
-  end, }
-
 end function_of_vector
 
 section mutation_away
@@ -360,23 +287,26 @@ local attribute [class] is_integral_domain
 variables {s s' : multiset N} (μ : seed_mutation s s') (S : Type*) [integral_domain S]
 [algebra (ring_of_function N) S]
 [is_localization.away (function_of_vector (μ.sign • μ.src_vect)) S]
-instance algebra_S : algebra (module.dual ℤ N →₀ ℤ) S := by assumption
+
+instance algebra_away : algebra (module.dual ℤ N →₀ ℤ) S := by assumption
 
 open skew_symmetric_form
 
-def seed_mutation.unit : units S :=
+variables (ε : ℤ) [is_sign ε]
+
+namespace seed_mutation
+
+def away_unit : units S :=
 { val := algebra_map (ring_of_function N) S (function_of_vector (μ.sign • μ.src_vect)),
   inv := is_localization.mk' S 1 ⟨function_of_vector (μ.sign • μ.src_vect), submonoid.mem_powers _⟩,
   val_inv := by rw [is_localization.mul_mk'_eq_mk'_of_mul, mul_one, is_localization.mk'_self],
   inv_val := by rw [mul_comm, is_localization.mul_mk'_eq_mk'_of_mul, mul_one, is_localization.mk'_self] }
 
-variables (ε : ℤ) [is_sign ε]
-
-def seed_mutation.map_monomial : multiplicative (module.dual ℤ N) →* S :=
+def monomial_to_away : multiplicative (module.dual ℤ N) →* S :=
 { to_fun := λ m, 
   is_localization.mk' S
     (finsupp.single (multiplicative.to_add m) 1) (1 : submonoid.powers (function_of_vector (μ.sign • μ.src_vect)))
-      * ↑((μ.unit S)^(ε • (-(multiplicative.to_add m) μ.src_vect))),
+      * ↑((μ.away_unit S)^(ε • (-(multiplicative.to_add m) μ.src_vect))),
   map_one' :=
   begin
     simp only [mul_one, algebra.id.smul_eq_mul, gpow_zero, units.coe_one,
@@ -394,19 +324,20 @@ def seed_mutation.map_monomial : multiplicative (module.dual ℤ N) →* S :=
     ring_exp,
   end }
 
-def seed_mutation.to_away : ring_of_function N →+* S :=
+def to_away : ring_of_function N →+* S :=
 add_monoid_algebra.lift_nc_ring_hom (int.cast_ring_hom S)
-(μ.map_monomial S ε) (λ _ _, (commute.all _ _))
+(μ.monomial_to_away S ε) (λ _ _, (commute.all _ _))
+
+end seed_mutation
 
 @[simp]
-lemma mutation_of_function_of_mutation_direction
-(v : N) [is_mutation_direction μ v] :
+lemma to_away_of_function_of_mutation_direction (v : N) [is_mutation_direction μ v] :
 (μ.to_away S ε) (function_of_vector v) = 
   is_localization.mk' S (function_of_vector v) 
       (1 : submonoid.powers (function_of_vector (μ.sign • μ.src_vect))) :=
 begin
   unfold seed_mutation.to_away function_of_vector 
-    seed_mutation.map_monomial add_monoid_algebra.lift_nc_ring_hom,
+    seed_mutation.monomial_to_away add_monoid_algebra.lift_nc_ring_hom,
   cases μ.is_direction v with k hk,
   simp only [mul_one,
     ring_hom.eq_int_cast,
@@ -427,25 +358,25 @@ begin
   refl,
 end
 
-lemma is_unit_mutation : 
+lemma is_unit_to_away : 
 is_unit (μ.to_away S ε (function_of_vector (μ.sign • μ.src_vect))) :=
 begin
-  rw mutation_of_function_of_mutation_direction,
+  rw to_away_of_function_of_mutation_direction,
   rw is_localization.mk'_one,
   refine @is_localization.map_units (ring_of_function N) _ _ S _ _ _ 
     ⟨function_of_vector (μ.sign • μ.src_vect), submonoid.mem_powers _⟩,
 end
 
 def seed_mutation.ring_hom_away : S →+* S :=
-is_localization.away.lift (function_of_vector (μ.sign • μ.src_vect)) (is_unit_mutation μ S ε)
+is_localization.away.lift (function_of_vector (μ.sign • μ.src_vect)) (is_unit_to_away μ S ε)
 
-@[simp] lemma mutation_app_const' : 
+@[simp] lemma mutation_away_map_const' : 
 ((μ.ring_hom_away S ε).comp (algebra_map (ring_of_function N) S)).comp 
   add_monoid_algebra.single_zero_ring_hom =
   (algebra_map (ring_of_function N) S ).comp add_monoid_algebra.single_zero_ring_hom := 
 dec_trivial
 
-@[simp] lemma mutation_app_const (b : ℤ) : 
+@[simp] lemma mutation_away_map_const (b : ℤ) : 
 μ.ring_hom_away S ε ((algebra_map (ring_of_function N) S) (finsupp.single 0 b)) =
 algebra_map (ring_of_function N) S (finsupp.single 0 b) :=
 begin
@@ -453,20 +384,20 @@ begin
   rw h,
   repeat {rw <- ring_hom.comp_apply},
   repeat {rw <- ring_hom.coe_comp},
-  rw mutation_app_const',
+  rw mutation_away_map_const',
 end
 
-@[simp] lemma mutation_app_monomial (a : multiplicative(module.dual ℤ N)) : 
+@[simp] lemma mutation_away_map_monomial (a : multiplicative(module.dual ℤ N)) : 
 (μ.ring_hom_away S ε) ((algebra_map (ring_of_function N) S) (finsupp.single a 1)) =
 algebra_map (ring_of_function N) S (finsupp.single a 1) 
-  * ↑((μ.unit S) ^ (ε • (- a μ.src_vect))) :=
+  * ↑((μ.away_unit S) ^ (ε • (- a μ.src_vect))) :=
 begin
   unfold seed_mutation.ring_hom_away is_localization.away.lift,
   rw is_localization.lift_eq,
   unfold seed_mutation.to_away add_monoid_algebra.lift_nc_ring_hom,
   dsimp,
   rw add_monoid_algebra.lift_nc_single,
-  unfold seed_mutation.map_monomial,
+  unfold seed_mutation.monomial_to_away,
   dsimp,
   rw [int.cast_one, one_mul],
   simp only [gpow_neg, units.ne_zero, or_false, mul_neg_eq_neg_mul_symm, mul_eq_mul_right_iff],
@@ -475,29 +406,29 @@ begin
 end
 
 @[simp]
-lemma ring_hom_away_eq_self_of_gpow_of_unit (k : ℤ) : 
-μ.ring_hom_away S ε ↑((μ.unit S) ^ k ) = ↑((μ.unit S) ^ k) := 
+lemma mutation_away_eq_self_of_gpow_of_unit (k : ℤ) : 
+μ.ring_hom_away S ε ↑((μ.away_unit S) ^ k ) = ↑((μ.away_unit S) ^ k) := 
 begin
-  unfold seed_mutation.ring_hom_away is_localization.away.lift seed_mutation.unit,
+  unfold seed_mutation.ring_hom_away is_localization.away.lift seed_mutation.away_unit,
   induction k,
   { dsimp,
     rw [gpow_coe_nat,  units.coe_pow, ring_hom.map_pow], 
     dsimp,
     rw [is_localization.lift_eq],
     apply congr_arg (λ x : S, x ^ k),
-    rw mutation_of_function_of_mutation_direction,
+    rw to_away_of_function_of_mutation_direction,
     rw is_localization.mk'_one },
-  { rw [gpow_neg_succ_of_nat, <- inv_pow,units.coe_pow, units.coe_inv],
-    simp only [units.coe_mk], 
+  { rw [gpow_neg_succ_of_nat, <- inv_pow,units.coe_pow],
     rw [ring_hom.map_pow],
     apply congr_arg (λ x : S, x ^ k.succ),
+    simp only [units.coe_mk, units.inv_mk],
     rw is_localization.lift_mk'_spec,
-    simp only [set_like.coe_mk, cluster.mutation_of_function_of_mutation_direction, ring_hom.map_one],
+    simp only [set_like.coe_mk, cluster.to_away_of_function_of_mutation_direction, ring_hom.map_one],
     rw <- is_localization.mk'_mul,
     rw [one_mul, mul_one, is_localization.mk'_self] },
 end
 
-def seed_mutation.equiv_away : S ≃+* S :=
+def seed_mutation.ring_equiv_away : S ≃+* S :=
 ring_equiv.of_hom_inv (μ.ring_hom_away S ε)
 (μ.ring_hom_away S (-ε))
 begin
@@ -516,13 +447,13 @@ begin
   { intros a,
     repeat {rw ring_hom.coe_comp, rw function.comp},
     dsimp,
-    rw [mutation_app_const, mutation_app_const] },
+    rw [mutation_away_map_const, mutation_away_map_const] },
   { intros a,
     repeat {rw ring_hom.coe_comp, rw function.comp},
     dsimp,
-    rw [mutation_app_monomial, ring_hom.map_mul, mutation_app_monomial, mul_assoc],
+    rw [mutation_away_map_monomial, ring_hom.map_mul, mutation_away_map_monomial, mul_assoc],
     simp only [gpow_neg],
-    rw ring_hom_away_eq_self_of_gpow_of_unit,
+    rw mutation_away_eq_self_of_gpow_of_unit,
     simp only [algebra.id.smul_eq_mul, gpow_neg, mul_neg_eq_neg_mul_symm],
     simp only [neg_mul_eq_neg_mul_symm, gpow_neg, inv_inv],
     erw units.val_inv,
@@ -544,13 +475,13 @@ begin
   { intros a,
     repeat {rw ring_hom.coe_comp, rw function.comp},
     dsimp,
-    rw [mutation_app_const, mutation_app_const] },
+    rw [mutation_away_map_const, mutation_away_map_const] },
   { intros a,
     repeat {rw ring_hom.coe_comp, rw function.comp},
     dsimp,
-    rw [mutation_app_monomial, ring_hom.map_mul, mutation_app_monomial, mul_assoc],
+    rw [mutation_away_map_monomial, ring_hom.map_mul, mutation_away_map_monomial, mul_assoc],
     simp only [gpow_neg],
-    rw ring_hom_away_eq_self_of_gpow_of_unit,
+    rw mutation_away_eq_self_of_gpow_of_unit,
     simp only [algebra.id.smul_eq_mul, gpow_neg, mul_neg_eq_neg_mul_symm],
     simp only [neg_mul_eq_neg_mul_symm, gpow_neg, inv_inv],
     erw units.val_inv,
@@ -578,7 +509,7 @@ abbreviation seed_mutation.away := localization.away (function_of_vector (μ.sig
 
 def away.integral_domain : integral_domain μ.away :=
 is_localization.integral_domain_of_le_non_zero_divisors μ.away
-  (powers_le_non_zero_divisors_of_domain (function_of_vector_ne_zero (μ.sign • μ.src_vect)))
+  (powers_le_non_zero_divisors_of_no_zero_divisors (function_of_vector_ne_zero (μ.sign • μ.src_vect)))
 
 local attribute [instance]  away.integral_domain
 
@@ -591,33 +522,32 @@ def seed_mutation.is_fraction_of_algebra_of_away_frac :
 @is_fraction_ring μ.away _ K _ (μ.algebra_of_away_frac K) :=
 is_localization.is_fraction_of_algebra_of_away_frac μ.away K _
 
-local attribute[instance] seed_mutation.algebra_of_away_frac seed_mutation.is_fraction_of_algebra_of_away_frac
+local attribute[instance] seed_mutation.is_fraction_of_algebra_of_away_frac
 
 private def z 
 {K : Type*} [field K] [algebra (ring_of_function N) K] [is_fraction_ring (ring_of_function N) K] 
 (m : module.dual ℤ N) := algebra_map (ring_of_function N) K (finsupp.single m 1)
 
 def seed_mutation.field_equiv : K ≃+* K := 
-is_fraction_ring.field_equiv_of_ring_equiv (μ.equiv_away μ.away 1)
+is_fraction_ring.field_equiv_of_ring_equiv (μ.ring_equiv_away μ.away 1)
 
-example (m : module.dual ℤ N) : 
+lemma mutation_field_equiv_map_monomial (m : module.dual ℤ N) : 
 μ.field_equiv K (z m)  = 
 z m * (1 + z (B (μ.sign • μ.src_vect))) ^ - m μ.src_vect :=
 begin
-  unfold z seed_mutation.field_equiv is_fraction_ring.field_equiv_of_ring_equiv seed_mutation.equiv_away,
+  unfold z seed_mutation.field_equiv is_fraction_ring.field_equiv_of_ring_equiv seed_mutation.ring_equiv_away,
   let h_ne := function_of_vector_ne_zero (μ.sign • μ.src_vect),
-  repeat {rw is_localization.eq_comp_app_of_lift_of_of_away_frac μ.away K h_ne},
+  repeat {rw is_localization.eq_comp_map_of_lift_of_of_away_frac μ.away K h_ne},
   simp only [fpow_neg, linear_map.map_smul, is_localization.ring_equiv_of_ring_equiv_eq, 
-    mutation_app_monomial, algebra.id.smul_eq_mul, one_mul, gpow_neg, mul_eq_mul_left_iff, inv_inj', 
+    mutation_away_map_monomial, algebra.id.smul_eq_mul, one_mul, gpow_neg, mul_eq_mul_left_iff, inv_inj', 
     mul_neg_eq_neg_mul_symm, ring_hom.map_units_inv, ring_equiv.of_hom_inv_apply, ring_hom.map_mul],
   apply or.inl,
-  unfold seed_mutation.unit function_of_vector,
-  induction m μ.src_vect,
-  all_goals 
-  { simp only [ring_hom.map_add, units.coe_mk, gpow_neg_succ_of_nat, inv_inj', ring_hom.map_pow,
-      ring_hom.map_units_inv, linear_map.map_smul, units.coe_pow, int.of_nat_eq_coe, gpow_coe_nat],
-    rw <- add_monoid_algebra.one_def,
-    simp only [ring_hom.map_one] },
+  unfold seed_mutation.away_unit function_of_vector,
+  induction m μ.src_vect;
+  simp only [ring_hom.map_add, units.coe_mk, gpow_neg_succ_of_nat, inv_inj', ring_hom.map_pow,
+      ring_hom.map_units_inv, linear_map.map_smul, units.coe_pow, int.of_nat_eq_coe, gpow_coe_nat];
+  rw <- add_monoid_algebra.one_def;
+  simp only [ring_hom.map_one],
 end
 
 end mutation_frac

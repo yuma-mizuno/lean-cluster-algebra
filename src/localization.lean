@@ -1,4 +1,15 @@
 import ring_theory.localization
+/-!
+This file proves some properties on localizations that are needed to define mutations.
+
+## Main statements
+
+* `is_localization_of_lift_of_sup`: let `A`, `B`, and `C` are commutative ring, and `M` and `N`
+  are submonoid of `A`. Suppose that `B` is a localization of `A` at `M` and `C` is a localization
+  of `A` at `M ⊔ N`. Then `C` is a localization of `B` at the image of `N` by the localization map
+  from `A` to `B`.
+
+-/
 
 namespace is_localization
 
@@ -25,7 +36,7 @@ noncomputable def algebra_of_lift_of_sup : algebra B C := ring_hom.to_algebra (l
 
 local attribute[instance] algebra_of_lift_of_sup
 
-lemma eq_comp_app_of_lift_of_sup (a : A) : algebra_map A C a = (algebra_map B C (algebra_map A B a)):=
+lemma eq_comp_map_of_lift_of_sup (a : A) : algebra_map A C a = (algebra_map B C (algebra_map A B a)):=
 begin
   have : algebra_map B C = lift_of_sup M N B C := by refl,
   rw this,
@@ -34,9 +45,9 @@ begin
 end
 
 lemma eq_comp_of_lift_of_sup : (algebra_map A C) = (algebra_map B C).comp (algebra_map A B) :=
-by ext; by rw [ring_hom.coe_comp]; by exact eq_comp_app_of_lift_of_sup M N B C _
+by ext; by rw [ring_hom.coe_comp]; by exact eq_comp_map_of_lift_of_sup M N B C _
 
-def is_localization_of_lift_of_sup
+lemma is_localization_of_lift_of_sup
 {A : Type*}  [comm_ring A]
 (M : submonoid A) (N : submonoid A)
 (B : Type*) [comm_ring B] (C : Type*) [comm_ring C]
@@ -49,7 +60,7 @@ is_localization (N.map (algebra_map A B) : submonoid B) C :=
     rcases submonoid.mem_map.mp n'.property with ⟨n, ⟨hn, H⟩⟩,
     simp only [ring_hom.coe_monoid_hom, subtype.val_eq_coe] at H,
     have : n ∈ M ⊔ N := set_like.le_def.mp le_sup_right hn,
-    rw [<- H, <- eq_comp_app_of_lift_of_sup],
+    rw [<- H, <- eq_comp_map_of_lift_of_sup],
     exact is_localization.map_units C ⟨n, this⟩,
   end,
   surj := 
@@ -57,7 +68,7 @@ is_localization (N.map (algebra_map A B) : submonoid B) C :=
     intros c,
     rcases surj (M ⊔ N) c with ⟨⟨a, ⟨mn, h_mn⟩⟩ , H⟩,
     rcases submonoid.mem_sup.mp h_mn with ⟨m, hm, n, hn, H'⟩,
-    repeat {rw eq_comp_app_of_lift_of_sup M N B C at H},
+    repeat {rw eq_comp_map_of_lift_of_sup M N B C at H},
     rw [set_like.coe_mk] at H,
     dsimp at H,
     have : algebra_map A B n ∈ (N.map (algebra_map A B) : submonoid B),
@@ -90,8 +101,8 @@ is_localization (N.map (algebra_map A B) : submonoid B) C :=
       rcases surj M b₁ with ⟨⟨a₁, ⟨m₁, hm₁⟩⟩, H₁⟩,
       rcases surj M b₂ with ⟨⟨a₂, ⟨m₂, hm₂⟩⟩, H₂⟩,
       have : algebra_map A C (a₁ * m₂) = algebra_map A C (a₂ * m₁),
-      rw eq_comp_app_of_lift_of_sup M N B C,
-      rw eq_comp_app_of_lift_of_sup M N B C,
+      rw eq_comp_map_of_lift_of_sup M N B C,
+      rw eq_comp_map_of_lift_of_sup M N B C,
       dsimp at *,
       simp only [ring_hom.map_mul],
       rw [<- H₁, <- H₂],
@@ -123,8 +134,8 @@ is_localization (N.map (algebra_map A B) : submonoid B) C :=
       refine mk'_eq_of_eq _,
       dsimp,
       exact calc mn * a₂ * m₁ = a₂ * m₁ * mn : by ring
-      ...                      = a₁ * m₂ * mn : by rw <-hmn
-      ...                      = mn * a₁ * m₂ : by ring },
+      ...                     = a₁ * m₂ * mn : by rw <-hmn
+      ...                     = mn * a₁ * m₂ : by ring },
     { intros h,
       rcases h with ⟨⟨n', hn'⟩, H⟩,
       rcases submonoid.mem_map.mp hn' with ⟨n, ⟨hn, H'⟩⟩,
@@ -149,7 +160,7 @@ is_localization (N.map (algebra_map A B) : submonoid B) C :=
       dsimp,
       repeat {rw <- mul_assoc},
       exact H'',
-      repeat {rw eq_comp_app_of_lift_of_sup M N B C at p},
+      repeat {rw eq_comp_map_of_lift_of_sup M N B C at p},
       simp only [ring_hom.map_mul] at p,
       rw [<- H₁, <- H₂] at p,
       refine (is_unit.mul_left_inj _).mp _,
@@ -157,7 +168,7 @@ is_localization (N.map (algebra_map A B) : submonoid B) C :=
       have : m₁ * m₂ ∈ M ⊔ N,
       refine submonoid.mul_mem _ (submonoid.mem_sup_left hm₁) (submonoid.mem_sup_left hm₂),
       exact map_units C ⟨m₁ * m₂, this⟩,
-      repeat {rw eq_comp_app_of_lift_of_sup M N B C},
+      repeat {rw eq_comp_map_of_lift_of_sup M N B C},
       simp only [ring_hom.map_mul] at *,
       repeat {rw mul_assoc at *},
       nth_rewrite 3 mul_comm,
@@ -184,7 +195,7 @@ noncomputable def lift_of_le : B →+* C :=
 noncomputable def algebra_of_lift_of_le : algebra B C := 
 ring_hom.to_algebra (lift_of_le B C h)
 
-lemma eq_comp_app_of_lift_of_le (a : A) : 
+lemma eq_comp_map_of_lift_of_le (a : A) : 
 algebra_map A C a = @algebra_map B C _ _ (algebra_of_lift_of_le B C h) (algebra_map A B a) :=
 begin
   have : @algebra_map B C _ _ (algebra_of_lift_of_le B C h) = lift_of_le B C h := by refl,
@@ -246,14 +257,14 @@ variables {A : Type*} [integral_domain A]
 include f h_ne
 
 noncomputable def lift_of_away_frac : B →+* C :=
-lift_of_le B C (powers_le_non_zero_divisors_of_domain h_ne)
+lift_of_le B C (powers_le_non_zero_divisors_of_no_zero_divisors  h_ne)
 
 noncomputable def algebra_of_away_frac : algebra B C :=
 ring_hom.to_algebra (lift_of_away_frac B C h_ne)
 
 --local attribute [instance] algebra_of_away_frac
 
-lemma eq_comp_app_of_lift_of_of_away_frac (a : A) : algebra_map A C a = 
+lemma eq_comp_map_of_lift_of_of_away_frac (a : A) : algebra_map A C a = 
 @algebra_map B C _ _ (algebra_of_away_frac B C h_ne) (algebra_map A B a) :=
 begin
   have : @algebra_map B C _ _ (algebra_of_away_frac B C h_ne) = lift_of_away_frac B C h_ne := by refl,
@@ -265,7 +276,7 @@ end
 def is_localization_of_away :
 @is_localization B _ ((non_zero_divisors A).map (algebra_map A B) : submonoid B) C _ 
   (algebra_of_lift_of_le B C
-  (powers_le_non_zero_divisors_of_domain h_ne)) :=
+  (powers_le_non_zero_divisors_of_no_zero_divisors  h_ne)) :=
 is_localization_of_lift_of_le B C _
 
 lemma non_zero_map_le_non_zero :
@@ -273,8 +284,8 @@ lemma non_zero_map_le_non_zero :
 begin
   rintros x ⟨a, ⟨ha, H⟩⟩,
   rw <- H,
-  refine map_mem_non_zero_divisors _ ha,
-  refine is_localization.injective B (powers_le_non_zero_divisors_of_domain h_ne),
+  refine ring_hom.map_mem_non_zero_divisors _ _ ha,
+  refine is_localization.injective B (powers_le_non_zero_divisors_of_no_zero_divisors  h_ne),
 end
 
 lemma exists_mul_mem_of_away_of_ne_zero (g : non_zero_divisors B) :
@@ -288,12 +299,12 @@ begin
   refine ⟨gn, _, rfl⟩,
   rw mem_non_zero_divisors_iff_ne_zero,
   intros h,
-  let p := (is_localization.to_map_eq_zero_iff B (powers_le_non_zero_divisors_of_domain h_ne)).mpr h,
+  let p := (is_localization.to_map_eq_zero_iff B (powers_le_non_zero_divisors_of_no_zero_divisors  h_ne)).mpr h,
   rw <- H at p,
   have hgd : (algebra_map A B) gd ∈ non_zero_divisors B,
   rw mem_non_zero_divisors_iff_ne_zero,
-  refine is_localization.to_map_ne_zero_of_mem_non_zero_divisors B (powers_le_non_zero_divisors_of_domain h_ne) _,
-  refine set_like.le_def.mp (powers_le_non_zero_divisors_of_domain h_ne) hg,
+  refine is_localization.to_map_ne_zero_of_mem_non_zero_divisors B (powers_le_non_zero_divisors_of_no_zero_divisors  h_ne) _,
+  refine set_like.le_def.mp (powers_le_non_zero_divisors_of_no_zero_divisors  h_ne) hg,
   let q := (non_zero_divisors B).mul_mem' g.2 hgd,
   simp at q,
   rw mem_non_zero_divisors_iff_ne_zero at q,

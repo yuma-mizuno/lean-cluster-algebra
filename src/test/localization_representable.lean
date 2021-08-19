@@ -4,8 +4,6 @@ import algebra.category.CommRing.basic
 
 open category_theory
 
-
-
 section
 
 universe u
@@ -32,7 +30,7 @@ begin
   exact f.comp (algebra_map A B),
   dsimp,
   intros a,
-  apply is_unit.map',
+  refine @is_unit.map B ↥C _ _ f.to_monoid_hom _ _,
   refine is_localization.map_units B a,
   exact λ X Y f, by refl,
   fsplit,
