@@ -105,13 +105,11 @@ def vector.is_monomial_at := { m : module.dual ℤ N | ∀ v ∈ s, m v ≥ 0 }
 
 def is_monomial_at := { f : K | ∃ m : module.dual ℤ N, f = z m ∧ vector.is_monomial_at s m }
 
-def cluster_monomials : set K := ⋃ γ, field_hom_of_under_mutation_path s γ '' is_monomial_at s
+def cluster_monomials : set K := 
+⋃ γ, field_hom_of_under_mutation_path s γ '' is_monomial_at (γ.right)
 
 def cluster_algebra : subring K := subring.closure (cluster_monomials s)
 
-/-
-theorem laurent_phenomenon : (cluster_algebra s : subring K) ≤ upper_cluster_algebra s :=
-by sorry 
--/
+def laurent_phenomenon : Prop := (cluster_algebra s : subring K) ≤ upper_cluster_algebra s
 
 end

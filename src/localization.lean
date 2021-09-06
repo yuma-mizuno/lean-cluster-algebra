@@ -4,8 +4,8 @@ This file proves some properties on localizations that are needed to define muta
 
 ## Main statements
 
-* `is_localization_of_lift_of_sup`: let `A`, `B`, and `C` are commutative ring, and `M` and `N`
-  are submonoid of `A`. Suppose that `B` is a localization of `A` at `M` and `C` is a localization
+* `is_localization_of_lift_of_sup`: let `A`, `B`, and `C` are commutative rings, and `M` and `N`
+  are submonoids of `A`. Suppose that `B` is a localization of `A` at `M` and `C` is a localization
   of `A` at `M ⊔ N`. Then `C` is a localization of `B` at the image of `N` by the localization map
   from `A` to `B`.
 
@@ -25,12 +25,7 @@ variables
 include M N
 
 noncomputable def lift_of_sup : B →+* C :=
-@lift A _ M B _ _ C _ _ (algebra_map A C)
-begin
-  rintros ⟨m, hm⟩,
-  dsimp,
-  exact map_units C (⟨m, set_like.le_def.mp le_sup_left hm⟩ : M ⊔ N),
-end
+lift $ λ h, by simpa only [set_like.coe_mk] using map_units C (⟨h.1, set_like.le_def.mp le_sup_left h.2⟩ : M ⊔ N)
 
 noncomputable def algebra_of_lift_of_sup : algebra B C := ring_hom.to_algebra (lift_of_sup M N B C)
 
@@ -39,9 +34,7 @@ local attribute[instance] algebra_of_lift_of_sup
 lemma eq_comp_map_of_lift_of_sup (a : A) : algebra_map A C a = (algebra_map B C (algebra_map A B a)):=
 begin
   have : algebra_map B C = lift_of_sup M N B C := by refl,
-  rw this,
-  unfold lift_of_sup,
-  rw lift_eq,
+  rw [this, lift_of_sup, lift_eq],
 end
 
 lemma eq_comp_of_lift_of_sup : (algebra_map A C) = (algebra_map B C).comp (algebra_map A B) :=
@@ -58,8 +51,8 @@ is_localization (N.map (algebra_map A B) : submonoid B) C :=
   begin
     intros n',
     rcases submonoid.mem_map.mp n'.property with ⟨n, ⟨hn, H⟩⟩,
-    simp only [ring_hom.coe_monoid_hom, subtype.val_eq_coe] at H,
     have : n ∈ M ⊔ N := set_like.le_def.mp le_sup_right hn,
+    simp only [ring_hom.coe_monoid_hom, subtype.val_eq_coe] at H,
     rw [<- H, <- eq_comp_map_of_lift_of_sup],
     exact is_localization.map_units C ⟨n, this⟩,
   end,
@@ -248,10 +241,10 @@ end
 
 section
 
-variables {A : Type*} [integral_domain A]
+variables {A : Type*} [integral_domain A] {f : A} (h_ne : f ≠ 0)
 (B : Type*) [integral_domain B] (C : Type*) [integral_domain C]
 [algebra A B] [algebra A C]
-{f : A} (h_ne : f ≠ 0) [is_localization.away f B] [is_fraction_ring A C]
+[is_localization.away f B] [is_fraction_ring A C]
 
 --local attribute[instance] algebra_of_lift_of_le
 include f h_ne
@@ -260,14 +253,14 @@ noncomputable def lift_of_away_frac : B →+* C :=
 lift_of_le B C (powers_le_non_zero_divisors_of_no_zero_divisors  h_ne)
 
 noncomputable def algebra_of_away_frac : algebra B C :=
-ring_hom.to_algebra (lift_of_away_frac B C h_ne)
+ring_hom.to_algebra (lift_of_away_frac h_ne B C)
 
 --local attribute [instance] algebra_of_away_frac
 
 lemma eq_comp_map_of_lift_of_of_away_frac (a : A) : algebra_map A C a = 
-@algebra_map B C _ _ (algebra_of_away_frac B C h_ne) (algebra_map A B a) :=
+@algebra_map B C _ _ (algebra_of_away_frac h_ne B C) (algebra_map A B a) :=
 begin
-  have : @algebra_map B C _ _ (algebra_of_away_frac B C h_ne) = lift_of_away_frac B C h_ne := by refl,
+  have : @algebra_map B C _ _ (algebra_of_away_frac h_ne B C) = lift_of_away_frac h_ne B C := by refl,
   rw this,
   dunfold lift_of_away_frac lift_of_le lift_of_sup,
   rw lift_eq,
@@ -314,12 +307,12 @@ end
 set_option pp.implicit false
 
 def is_fraction_of_algebra_of_away_frac :
-@is_fraction_ring B _ C _ (algebra_of_away_frac B C h_ne):=
+@is_fraction_ring B _ C _ (algebra_of_away_frac h_ne B C):=
 begin
-  letI : algebra B C := (algebra_of_away_frac B C h_ne),
-  haveI := is_localization_of_away B C h_ne,
-  exact is_localization_of_le_of_exists_mul_mem C (non_zero_map_le_non_zero B h_ne) 
-    (λ n, exists_mul_mem_of_away_of_ne_zero B h_ne n),
+  letI : algebra B C := (algebra_of_away_frac h_ne B C),
+  haveI := is_localization_of_away h_ne B C,
+  exact is_localization_of_le_of_exists_mul_mem C (non_zero_map_le_non_zero h_ne B) 
+    (λ n, exists_mul_mem_of_away_of_ne_zero h_ne B n),
 end
 
 end

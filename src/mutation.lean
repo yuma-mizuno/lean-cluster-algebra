@@ -512,13 +512,13 @@ is_localization.integral_domain_of_le_non_zero_divisors μ.away
 local attribute [instance]  away.integral_domain
 
 def seed_mutation.algebra_of_away_frac : algebra μ.away K :=
-is_localization.algebra_of_away_frac μ.away K (function_of_vector_ne_zero (μ.sign • μ.src_vect))
+is_localization.algebra_of_away_frac (function_of_vector_ne_zero (μ.sign • μ.src_vect)) μ.away K
 
 local attribute[instance] seed_mutation.algebra_of_away_frac
 
 def seed_mutation.is_fraction_of_algebra_of_away_frac : 
 @is_fraction_ring μ.away _ K _ (μ.algebra_of_away_frac K) :=
-is_localization.is_fraction_of_algebra_of_away_frac μ.away K _
+is_localization.is_fraction_of_algebra_of_away_frac _ μ.away K
 
 local attribute[instance] seed_mutation.is_fraction_of_algebra_of_away_frac
 
@@ -535,7 +535,7 @@ z m * (1 + z (B (μ.sign • μ.src_vect))) ^ - m μ.src_vect :=
 begin
   unfold z seed_mutation.field_equiv is_fraction_ring.field_equiv_of_ring_equiv seed_mutation.ring_equiv_away,
   let h_ne := function_of_vector_ne_zero (μ.sign • μ.src_vect),
-  repeat {rw is_localization.eq_comp_map_of_lift_of_of_away_frac μ.away K h_ne},
+  repeat {rw is_localization.eq_comp_map_of_lift_of_of_away_frac h_ne μ.away K},
   simp only [fpow_neg, linear_map.map_smul, is_localization.ring_equiv_of_ring_equiv_eq, 
     mutation_away_map_monomial, algebra.id.smul_eq_mul, one_mul, gpow_neg, mul_eq_mul_left_iff, inv_inj', 
     mul_neg_eq_neg_mul_symm, ring_hom.map_units_inv, ring_equiv.of_hom_inv_apply, ring_hom.map_mul],
